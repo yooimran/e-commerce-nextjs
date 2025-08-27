@@ -1,103 +1,170 @@
-import Image from "next/image";
+"use client"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import Image from "next/image"
+import Navbar from "./components/Navbar"
+import Footer from "./components/Footer"
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [featuredProducts, setFeaturedProducts] = useState([])
+  const [loading, setLoading] = useState(true)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    fetchFeaturedProducts()
+  }, [])
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      const response = await fetch('/api/products')
+      if (response.ok) {
+        const data = await response.json()
+        // Show first 3 products as featured, or empty array if no products
+        // data is an array directly, not an object with products property
+        setFeaturedProducts(Array.isArray(data) ? data.slice(0, 3) : [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error)
+      setFeaturedProducts([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      
+      {/* Hero Section */}
+      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-5xl font-bold mb-6">
+            Welcome to Our E-Commerce Store
+          </h1>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">
+            Discover amazing products at unbeatable prices. Quality, convenience, and satisfaction guaranteed.
+          </p>
+          <div className="space-x-4">
+            <Link 
+              href="/products" 
+              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            >
+              Shop Now
+            </Link>
+            <Link 
+              href="/signup" 
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* Product Highlights */}
+      <section className="py-16 bg-gray-50 flex-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Featured Products
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              {featuredProducts.length > 0 
+                ? "Check out our most popular items that customers love"
+                : "Be the first to add products to our marketplace!"
+              }
+            </p>
+          </div>
+          
+          {loading ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : featuredProducts.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {featuredProducts.map((product) => (
+                  <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="relative h-48 bg-gray-200">
+                      <Image
+                        src={product.imageUrl || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&h=500&fit=crop"}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                        unoptimized={true}
+                        onError={(e) => {
+                          e.target.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&h=500&fit=crop"
+                        }}
+                      />
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        {product.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">{product.category}</p>
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                        {product.description}
+                      </p>
+                      <p className="text-2xl font-bold text-blue-600 mb-4">
+                        ${product.price.toFixed(2)}
+                      </p>
+                      <Link 
+                        href={`/products/${product.id}`}
+                        className="block w-full bg-blue-600 text-white text-center py-2 rounded-md hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="text-center mt-12">
+                <Link 
+                  href="/products" 
+                  className="inline-block bg-gray-900 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+                >
+                  View All Products
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-16">
+              <div className="max-w-md mx-auto">
+                <div className="mb-6">
+                  <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Products Yet
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  This marketplace is ready for you! Be the first to add products and start selling.
+                </p>
+                <div className="space-y-3">
+                  <Link
+                    href="/signup"
+                    className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    Sign Up to Sell
+                  </Link>
+                  <div>
+                    <Link
+                      href="/products"
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Browse All Products →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <Footer />
     </div>
-  );
+  )
 }
