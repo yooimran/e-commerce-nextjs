@@ -28,7 +28,7 @@ export default function Dashboard() {
       const allProducts = await productsResponse.json()
       // Filter products by current user
       const userProducts = allProducts.filter(product => 
-        product.userId === currentUser.email
+        product.createdBy === currentUser.email || product.userId === currentUser.email
       )
       
       // Fetch orders
@@ -135,49 +135,55 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex flex-col">
       <Navbar />
       
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Dashboard</h1>
-          <p className="text-gray-600">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-4">
+            Dashboard
+          </h1>
+          <p className="text-gray-600 text-lg">
             Welcome back, {currentUser?.displayName || currentUser?.email}!
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div className="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-xl border border-purple-100 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-4 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Products</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboardData.stats.totalProducts}</p>
+              <div className="ml-6">
+                <p className="text-sm font-bold text-gray-600 mb-1">Total Products</p>
+                <p className="text-3xl font-black bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  {dashboardData.stats.totalProducts}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-xl border border-purple-100 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboardData.stats.totalOrders}</p>
+              <div className="ml-6">
+                <p className="text-sm font-bold text-gray-600 mb-1">Total Orders</p>
+                <p className="text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  {dashboardData.stats.totalOrders}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-xl border border-purple-100 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center">
               <div className="p-2 bg-yellow-100 rounded-lg">
                 <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,10 +288,10 @@ export default function Dashboard() {
               ) : (
                 <div className="space-y-4">
                   {dashboardData.products.slice(0, 3).map((product) => (
-                    <div key={product.id} className="flex items-center space-x-3">
+                    <div key={product._id || product.id} className="flex items-center space-x-3">
                       <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                       <p className="text-gray-600">
-                        Listed product: <span className="font-medium">{product.name}</span>
+                        Listed product: <span className="font-medium">{product.name || product.title}</span>
                       </p>
                       <span className="text-xs text-gray-500">
                         {new Date(product.createdAt).toLocaleDateString()}
@@ -293,7 +299,7 @@ export default function Dashboard() {
                     </div>
                   ))}
                   {dashboardData.orders.slice(0, 3).map((order) => (
-                    <div key={order.id} className="flex items-center space-x-3">
+                    <div key={order._id || order.id} className="flex items-center space-x-3">
                       <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                       <p className="text-gray-600">
                         Placed order: <span className="font-medium">${order.total.toFixed(2)}</span>
@@ -336,12 +342,12 @@ export default function Dashboard() {
             ) : (
               <div className="divide-y divide-gray-200">
                 {dashboardData.products.map((product) => (
-                  <div key={product.id} className="p-6">
+                  <div key={product._id || product.id} className="p-6">
                     <div className="flex items-start space-x-4">
                       <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
                         <Image
                           src={product.imageUrl}
-                          alt={product.name}
+                          alt={product.title || product.name || 'Product image'}
                           fill
                           className="object-cover"
                           onError={(e) => {
@@ -352,7 +358,7 @@ export default function Dashboard() {
                       
                       <div className="flex-1 min-w-0">
                         <Link 
-                          href={`/products/${product.id}`}
+                          href={`/products/${product._id || product.id}`}
                           className="text-lg font-semibold text-gray-900 hover:text-blue-600"
                         >
                           {product.name}
@@ -367,13 +373,13 @@ export default function Dashboard() {
                       
                       <div className="flex space-x-2">
                         <Link
-                          href={`/dashboard/edit-product/${product.id}`}
+                          href={`/dashboard/edit-product/${product._id || product.id}`}
                           className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
                         >
                           Edit
                         </Link>
                         <button
-                          onClick={() => deleteProduct(product.id)}
+                          onClick={() => deleteProduct(product._id || product.id)}
                           className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
                         >
                           Delete
@@ -406,7 +412,7 @@ export default function Dashboard() {
             ) : (
               <div className="divide-y divide-gray-200">
                 {dashboardData.orders.map((order) => (
-                  <div key={order.id} className="p-6">
+                  <div key={order._id || order.id} className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">Order #{order.id}</h3>

@@ -94,12 +94,12 @@ export default function Checkout() {
       // Create order
       const orderData = {
         shippingAddress: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+          fullName: `${formData.firstName} ${formData.lastName}`,
           address: formData.address,
           city: formData.city,
           state: formData.state,
-          zipCode: formData.zipCode
+          postalCode: formData.zipCode,
+          country: 'United States' // Default country, you can make this configurable
         },
         paymentMethod: formData.paymentMethod,
         userEmail: currentUser.email
@@ -119,9 +119,11 @@ export default function Checkout() {
         router.push(`/order-confirmation/${order.id}`)
       } else {
         const error = await response.json()
-        toast.error(error.message || 'Failed to place order')
+        console.error('Order error:', error)
+        toast.error(error.error || 'Failed to place order')
       }
     } catch (error) {
+      console.error('Order submission error:', error)
       toast.error('Failed to place order')
     } finally {
       setProcessing(false)
@@ -324,7 +326,7 @@ export default function Checkout() {
                       <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                         <Image
                           src={item.product.imageUrl}
-                          alt={item.product.name}
+                          alt={item.product.title || item.product.name || 'Product image'}
                           fill
                           className="object-cover"
                           onError={(e) => {

@@ -13,11 +13,17 @@ export default function AddProduct() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    name: "",
+    title: "",
     description: "",
     price: "",
+    originalPrice: "",
     category: "",
-    imageUrl: ""
+    brand: "",
+    imageUrl: "",
+    inStock: true,
+    stockQuantity: "",
+    tags: "",
+    featured: false
   })
   const [imageError, setImageError] = useState(false)
 
@@ -64,14 +70,30 @@ export default function AddProduct() {
         },
         body: JSON.stringify({
           ...formData,
+          price: Number(formData.price),
+          originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined,
+          stockQuantity: formData.stockQuantity ? Number(formData.stockQuantity) : 0,
+          tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
           userEmail: currentUser.email
         }),
       })
 
       if (response.ok) {
         const newProduct = await response.json()
-        toast.success(`Product added successfully! ID: ${newProduct.id}`)
-        setFormData({ name: "", description: "", price: "", category: "", imageUrl: "" })
+        toast.success(`Product "${newProduct.title}" added successfully!`)
+        setFormData({ 
+          title: "", 
+          description: "", 
+          price: "", 
+          originalPrice: "",
+          category: "", 
+          brand: "",
+          imageUrl: "",
+          inStock: true,
+          stockQuantity: "",
+          tags: "",
+          featured: false
+        })
         
         // Redirect to products list to see the new product
         setTimeout(() => {
@@ -79,9 +101,10 @@ export default function AddProduct() {
         }, 1500)
       } else {
         const error = await response.json()
-        toast.error(error.message || "Failed to add product")
+        toast.error(error.error || "Failed to add product")
       }
     } catch (error) {
+      console.error('Error adding product:', error)
       toast.error("An error occurred. Please try again.")
     } finally {
       setLoading(false)
@@ -101,18 +124,18 @@ export default function AddProduct() {
         <div className="bg-white shadow-lg rounded-lg p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Product Name *
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                Product Title *
               </label>
               <input
                 type="text"
-                id="name"
-                name="name"
-                value={formData.name}
+                id="title"
+                name="title"
+                value={formData.title}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter product name"
+                placeholder="Enter product title"
               />
             </div>
 
@@ -147,6 +170,41 @@ export default function AddProduct() {
                 step="0.01"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="originalPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                Original Price ($) <span className="text-gray-500">(optional)</span>
+              </label>
+              <input
+                type="number"
+                id="originalPrice"
+                name="originalPrice"
+                value={formData.originalPrice}
+                onChange={handleInputChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                If this product is on sale, enter the original price here.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="brand" className="block text-sm font-medium text-gray-700 mb-2">
+                Brand <span className="text-gray-500">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="brand"
+                name="brand"
+                value={formData.brand}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter brand name"
               />
             </div>
 
@@ -221,6 +279,126 @@ export default function AddProduct() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="stockQuantity" className="block text-sm font-medium text-gray-700 mb-2">
+                  Stock Quantity
+                </label>
+                <input
+                  type="number"
+                  id="stockQuantity"
+                  name="stockQuantity"
+                  value={formData.stockQuantity}
+                  onChange={handleInputChange}
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="flex items-center space-x-4 pt-6">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="inStock"
+                    checked={formData.inStock}
+                    onChange={(e) => setFormData(prev => ({ ...prev, inStock: e.target.checked }))}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">In Stock</span>
+                </label>
+
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    checked={formData.featured}
+                    onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Featured Product</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+                Tags <span className="text-gray-500">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                value={formData.tags}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="smartphone, wireless, bluetooth (comma separated)"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Separate tags with commas. These help customers find your product.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="stockQuantity" className="block text-sm font-medium text-gray-700 mb-2">
+                  Stock Quantity
+                </label>
+                <input
+                  type="number"
+                  id="stockQuantity"
+                  name="stockQuantity"
+                  value={formData.stockQuantity}
+                  onChange={handleInputChange}
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="flex items-center space-x-4 pt-7">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="inStock"
+                    checked={formData.inStock}
+                    onChange={(e) => setFormData(prev => ({ ...prev, inStock: e.target.checked }))}
+                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">In Stock</span>
+                </label>
+
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    checked={formData.featured}
+                    onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
+                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Featured Product</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+                Tags <span className="text-gray-500">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                value={formData.tags}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter tags separated by commas (e.g., electronics, smartphone, android)"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Separate multiple tags with commas. These help with search and categorization.
+              </p>
             </div>
 
             {/* Image URL Tips */}

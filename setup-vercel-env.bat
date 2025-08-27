@@ -1,0 +1,23 @@
+@echo off
+echo Adding Firebase environment variables to Vercel...
+
+echo Adding NEXT_PUBLIC_FIREBASE_API_KEY...
+echo AIzaSyBemzsOJEGZ3mff9UKkU977ongk7iYZQUs | vercel env add NEXT_PUBLIC_FIREBASE_API_KEY production
+
+echo Adding NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN...
+echo e-commerce-fb82a.firebaseapp.com | vercel env add NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN production
+
+echo Adding NEXT_PUBLIC_FIREBASE_PROJECT_ID...
+echo e-commerce-fb82a | vercel env add NEXT_PUBLIC_FIREBASE_PROJECT_ID production
+
+echo Adding NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET...
+echo e-commerce-fb82a.firebasestorage.app | vercel env add NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET production
+
+echo Adding NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID...
+echo 1095026268689 | vercel env add NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID production
+
+echo Adding NEXT_PUBLIC_FIREBASE_APP_ID...
+echo 1:1095026268689:web:431e9ea8d153ac3c196fb0 | vercel env add NEXT_PUBLIC_FIREBASE_APP_ID production
+
+echo All environment variables added!
+echo Now run: vercel --prod

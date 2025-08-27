@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import toast from "react-hot-toast"
 import { useAuth } from "../../../../contexts/AuthContext"
 import Navbar from "../../../components/Navbar"
@@ -22,8 +23,14 @@ export default function EditProduct() {
     name: '',
     description: '',
     price: '',
+    originalPrice: '',
     category: '',
-    imageUrl: ''
+    brand: '',
+    imageUrl: '',
+    inStock: true,
+    stockQuantity: '',
+    tags: '',
+    featured: false
   })
 
   const categories = [
@@ -31,10 +38,14 @@ export default function EditProduct() {
     'Clothing',
     'Home & Garden',
     'Sports & Outdoors',
-    'Books',
     'Health & Beauty',
     'Toys & Games',
+    'Books',
     'Automotive',
+    'Jewelry',
+    'Accessories',
+    'Art & Crafts',
+    'Music',
     'Other'
   ]
 
@@ -52,7 +63,7 @@ export default function EditProduct() {
             const data = await response.json()
             
             // Check if user owns this product
-            if (data.userId !== currentUser.email) {
+            if (data.createdBy !== currentUser.email && data.userId !== currentUser.email) {
               toast.error("You don't have permission to edit this product")
               router.push("/dashboard")
               return
@@ -60,11 +71,17 @@ export default function EditProduct() {
             
             setProduct(data)
             setFormData({
-              name: data.name,
+              name: data.title || data.name,
               description: data.description,
               price: data.price.toString(),
+              originalPrice: data.originalPrice ? data.originalPrice.toString() : '',
               category: data.category,
-              imageUrl: data.imageUrl || ''
+              brand: data.brand || '',
+              imageUrl: data.imageUrl || '',
+              inStock: data.inStock !== undefined ? data.inStock : true,
+              stockQuantity: data.stockQuantity ? data.stockQuantity.toString() : '',
+              tags: data.tags ? (Array.isArray(data.tags) ? data.tags.join(', ') : data.tags) : '',
+              featured: data.featured || false
             })
           } else {
             toast.error("Product not found")
@@ -109,6 +126,16 @@ export default function EditProduct() {
       return
     }
 
+    if (formData.originalPrice && (isNaN(formData.originalPrice) || parseFloat(formData.originalPrice) < 0)) {
+      toast.error("Please enter a valid original price")
+      return
+    }
+
+    if (formData.stockQuantity && (isNaN(formData.stockQuantity) || parseInt(formData.stockQuantity) < 0)) {
+      toast.error("Please enter a valid stock quantity")
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -118,11 +145,17 @@ export default function EditProduct() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
+          title: formData.name,
           description: formData.description,
           price: parseFloat(formData.price),
+          originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
           category: formData.category,
+          brand: formData.brand,
           imageUrl: formData.imageUrl || `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&h=500&fit=crop&q=80`,
+          inStock: formData.inStock,
+          stockQuantity: formData.stockQuantity ? parseInt(formData.stockQuantity) : 0,
+          tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+          featured: formData.featured,
           userEmail: currentUser.email
         }),
       })
@@ -239,6 +272,25 @@ export default function EditProduct() {
               </div>
 
               <div>
+                <label htmlFor="originalPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                  Original Price ($) <span className="text-gray-500">(optional)</span>
+                </label>
+                <input
+                  type="number"
+                  id="originalPrice"
+                  name="originalPrice"
+                  value={formData.originalPrice}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
                   Category *
                 </label>
@@ -257,6 +309,21 @@ export default function EditProduct() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="brand" className="block text-sm font-medium text-gray-700 mb-2">
+                  Brand <span className="text-gray-500">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="brand"
+                  name="brand"
+                  value={formData.brand}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter brand name"
+                />
               </div>
             </div>
 
@@ -284,11 +351,12 @@ export default function EditProduct() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Image Preview
                 </label>
-                <div className="w-48 h-48 bg-gray-100 rounded-lg overflow-hidden">
-                  <img
+                <div className="w-48 h-48 bg-gray-100 rounded-lg overflow-hidden relative">
+                  <Image
                     src={formData.imageUrl}
                     alt="Product preview"
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                     onError={(e) => {
                       e.target.style.display = 'none'
                     }}
@@ -296,6 +364,66 @@ export default function EditProduct() {
                 </div>
               </div>
             )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="stockQuantity" className="block text-sm font-medium text-gray-700 mb-2">
+                  Stock Quantity
+                </label>
+                <input
+                  type="number"
+                  id="stockQuantity"
+                  name="stockQuantity"
+                  value={formData.stockQuantity}
+                  onChange={handleInputChange}
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="flex items-center space-x-4 pt-6">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="inStock"
+                    checked={formData.inStock}
+                    onChange={(e) => setFormData(prev => ({ ...prev, inStock: e.target.checked }))}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">In Stock</span>
+                </label>
+
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    checked={formData.featured}
+                    onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Featured Product</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+                Tags <span className="text-gray-500">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                value={formData.tags}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="smartphone, wireless, bluetooth (comma separated)"
+              />
+              <p className="text-sm text-gray-600 mt-1">
+                Separate tags with commas. These help customers find your product.
+              </p>
+            </div>
 
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <Link

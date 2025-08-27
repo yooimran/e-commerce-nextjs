@@ -45,7 +45,7 @@ export default function ProductDetails({ params }) {
       const response = await fetch(`/api/products?category=${category}`)
       if (response.ok) {
         const data = await response.json()
-        const filtered = data.filter(p => p.id !== currentId).slice(0, 4)
+        const filtered = data.filter(p => (p._id || p.id) !== currentId).slice(0, 4)
         setRelatedProducts(filtered)
       }
     } catch (error) {
@@ -65,6 +65,18 @@ export default function ProductDetails({ params }) {
       return
     }
 
+    // Check if product is in stock
+    if (!product.inStock) {
+      toast.error('This product is currently out of stock')
+      return
+    }
+
+    // Check if requested quantity is available
+    if (product.stockQuantity !== undefined && quantity > product.stockQuantity) {
+      toast.error(`Only ${product.stockQuantity} units available`)
+      return
+    }
+
     try {
       const response = await fetch('/api/cart', {
         method: 'POST',
@@ -72,20 +84,22 @@ export default function ProductDetails({ params }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          productId: product.id, 
+          productId: product._id || product.id, // Support both _id (MongoDB) and id (fallback)
           quantity,
           userEmail: currentUser.email 
         }),
       })
 
       if (response.ok) {
+        const result = await response.json()
         toast.success(`Added ${quantity} item(s) to cart!`)
         setQuantity(1)
       } else {
         const error = await response.json()
-        toast.error(error.message || 'Failed to add to cart')
+        toast.error(error.error || 'Failed to add to cart')
       }
     } catch (error) {
+      console.error('Add to cart error:', error)
       toast.error('Failed to add to cart')
     }
   }
@@ -114,8 +128,11 @@ export default function ProductDetails({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto mb-4"></div>
+          <p className="text-purple-600 font-medium">Loading product details...</p>
+        </div>
       </div>
     )
   }
@@ -125,14 +142,14 @@ export default function ProductDetails({ params }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex flex-col">
       <Navbar />
       
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
+        <div className="mb-8">
           <Link 
             href="/products" 
-            className="inline-flex items-center text-blue-600 hover:text-blue-700"
+            className="inline-flex items-center text-purple-600 hover:text-purple-700 font-semibold bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg transition-all duration-300"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -146,7 +163,7 @@ export default function ProductDetails({ params }) {
           <div className="aspect-square relative bg-gray-100 rounded-lg overflow-hidden">
             <Image
               src={product.imageUrl}
-              alt={product.name}
+              alt={product.title || product.name || 'Product image'}
               fill
               className="object-cover"
               onError={(e) => {
@@ -159,13 +176,27 @@ export default function ProductDetails({ params }) {
           <div className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                  {product.category}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    {product.category}
+                  </span>
+                  {product.featured && (
+                    <span className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                      Featured
+                    </span>
+                  )}
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm ${
+                    product.inStock 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {product.inStock ? 'In Stock' : 'Out of Stock'}
+                  </span>
+                </div>
                 {isOwner && (
                   <div className="flex space-x-2">
                     <Link
-                      href={`/dashboard/edit-product/${product.id}`}
+                      href={`/dashboard/edit-product/${product._id || product.id}`}
                       className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
                     >
                       Edit
@@ -179,12 +210,60 @@ export default function ProductDetails({ params }) {
                   </div>
                 )}
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {product.name}
+              
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {product.title || product.name}
               </h1>
-              <p className="text-4xl font-bold text-blue-600 mb-6">
-                ${product.price}
-              </p>
+              
+              {product.brand && (
+                <p className="text-lg text-gray-600 mb-4">
+                  by <span className="font-medium">{product.brand}</span>
+                </p>
+              )}
+              
+              <div className="mb-6">
+                {product.originalPrice && product.originalPrice > product.price ? (
+                  <div className="flex items-center space-x-3">
+                    <span className="text-4xl font-bold text-blue-600">
+                      ${product.price.toFixed(2)}
+                    </span>
+                    <span className="text-2xl text-gray-500 line-through">
+                      ${product.originalPrice.toFixed(2)}
+                    </span>
+                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">
+                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-4xl font-bold text-blue-600">
+                    ${product.price.toFixed(2)}
+                  </span>
+                )}
+              </div>
+
+              {product.stockQuantity !== undefined && (
+                <div className="mb-4">
+                  <span className="text-sm text-gray-600">
+                    Stock: <span className="font-medium">{product.stockQuantity} units available</span>
+                  </span>
+                </div>
+              )}
+
+              {product.tags && product.tags.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Tags:</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags.map((tag, index) => (
+                      <span 
+                        key={index}
+                        className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -204,9 +283,10 @@ export default function ProductDetails({ params }) {
                     id="quantity"
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value))}
-                    className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={!product.inStock}
+                    className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
                   >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                    {Array.from({ length: Math.min(10, product.stockQuantity || 10) }, (_, i) => i + 1).map(num => (
                       <option key={num} value={num}>{num}</option>
                     ))}
                   </select>
@@ -214,9 +294,14 @@ export default function ProductDetails({ params }) {
 
                 <button
                   onClick={addToCart}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  disabled={!product.inStock}
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+                    product.inStock
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
                 >
-                  Add to Cart
+                  {product.inStock ? 'Add to Cart' : 'Out of Stock'}
                 </button>
               </div>
             )}
@@ -249,7 +334,7 @@ export default function ProductDetails({ params }) {
                   <div className="relative h-48">
                     <Image
                       src={relatedProduct.imageUrl}
-                      alt={relatedProduct.name}
+                      alt={relatedProduct.title || relatedProduct.name || 'Related product image'}
                       fill
                       className="object-cover"
                       onError={(e) => {
